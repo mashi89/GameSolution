@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 
 class Application
 {
@@ -11,9 +12,11 @@ public:
     void Shutdown();
 
 protected:
-    virtual void Update();
+    virtual void Update(float deltaTime);
     virtual void Render();
 
 private:
-    bool m_Running;
+    bool  m_Running;
+    float m_DeltaTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_LastTime;
 };
