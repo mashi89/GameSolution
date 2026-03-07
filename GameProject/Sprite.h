@@ -18,3 +18,10 @@ private:
     std::string m_TexturePath;
     float m_X=0, m_Y=0, m_ScaleX=1, m_ScaleY=1, m_Rotation=0;
 };
+
+// inline implementation
+inline Sprite::Sprite(const std::string& texturePath)
+    : m_TexturePath(texturePath)
+{
+}
+
