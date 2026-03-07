@@ -1,81 +1,144 @@
 #include "PlayingState.h"
+#include "RaylibRenderer.h"
 #include "GameManager.h"
-#include "ConsoleUtils.h"
-#include <iostream>
+#include <algorithm>
+#include <cmath>
 
-// Screen dimensions for a standard 80x24 console
-static const int SCREEN_WIDTH  = 80;
-static const int SCREEN_HEIGHT = 24;
+PlayingState::PlayingState() = default;
+PlayingState::~PlayingState() = default;
 
-// CP437 full-block character used as a single "pixel" on the game screen
-static const char BLOCK_CHARACTER = static_cast<char>(219);
+
+
+// Relative path to the Body_A walk sprite sheets.
+// The working directory when launched from Visual Studio is the project folder.
+static constexpr const char* ASSET_WALK_DOWN =
+    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png";
+static constexpr const char* ASSET_WALK_SIDE =
+    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png";
+static constexpr const char* ASSET_WALK_UP =
+    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png";
 
 void PlayingState::OnEnter()
 {
-    m_PixelX = SCREEN_WIDTH  / 2;
-    m_PixelY = SCREEN_HEIGHT / 2;
-    m_NeedsRedraw = true;
-    ConsoleUtils::ShowCursor(false);
+    m_Renderer = std::make_unique<RaylibRenderer>();
+    m_Renderer->Initialize(WINDOW_W, WINDOW_H, "Game Screen");
+
+    m_TexDown = m_Renderer->LoadSpriteSheet(ASSET_WALK_DOWN);
+    m_TexSide = m_Renderer->LoadSpriteSheet(ASSET_WALK_SIDE);
+    m_TexUp   = m_Renderer->LoadSpriteSheet(ASSET_WALK_UP);
+
+    m_PosX      = WINDOW_W / 2.0f;
+    m_PosY      = WINDOW_H / 2.0f;
+    m_Direction = Direction::Down;
+    m_AnimFrame = 0;
+    m_AnimTime  = 0.0f;
 }
 
 void PlayingState::OnExit()
 {
-    ConsoleUtils::ShowCursor(true);
+    m_Renderer.reset();
 }
 
-void PlayingState::Update(float /*deltaTime*/)
+void PlayingState::Update(float deltaTime)
 {
-    if (!ConsoleUtils::KeyAvailable())
+    if (!m_Renderer)
         return;
 
-    int key = ConsoleUtils::ReadKey();
-
-    if (key == ConsoleUtils::KEY_ESC)
+    // If the player closed the window, return to the main menu.
+    if (m_Renderer->ShouldClose())
     {
-        // Return to the main menu
         GameManager::GetInstance().PopState();
-        return;  // Do not touch members after PopState (state may be destroyed)
+        return;
     }
 
-    int newX = m_PixelX;
-    int newY = m_PixelY;
-
-    if (key == ConsoleUtils::KEY_ARROW_UP)         newY -= 1;
-    else if (key == ConsoleUtils::KEY_ARROW_DOWN)  newY += 1;
-    else if (key == ConsoleUtils::KEY_ARROW_LEFT)  newX -= 1;
-    else if (key == ConsoleUtils::KEY_ARROW_RIGHT) newX += 1;
-
-    // Clamp to the playable area (leave row 0 for title, row SCREEN_HEIGHT-1 for hint)
-    if (newX < 0)                newX = 0;
-    if (newX >= SCREEN_WIDTH)    newX = SCREEN_WIDTH  - 1;
-    if (newY < 1)                newY = 1;
-    if (newY >= SCREEN_HEIGHT - 1) newY = SCREEN_HEIGHT - 2;
-
-    if (newX != m_PixelX || newY != m_PixelY)
+    if (m_Renderer->IsKeyPressed(RaylibKey::Escape))
     {
-        m_PixelX = newX;
-        m_PixelY = newY;
-        m_NeedsRedraw = true;
+        GameManager::GetInstance().PopState();
+        return;
+    }
+
+    // --- Movement ---
+    float dx = 0.0f, dy = 0.0f;
+
+    if (m_Renderer->IsKeyDown(RaylibKey::Up))    dy -= 1.0f;
+    if (m_Renderer->IsKeyDown(RaylibKey::Down))  dy += 1.0f;
+    if (m_Renderer->IsKeyDown(RaylibKey::Left))  dx -= 1.0f;
+    if (m_Renderer->IsKeyDown(RaylibKey::Right)) dx += 1.0f;
+
+    // Normalise the movement vector so diagonal speed equals cardinal speed.
+    const float len = std::sqrt(dx * dx + dy * dy);
+    if (len > 0.0f)
+    {
+        dx /= len;
+        dy /= len;
+    }
+
+    m_PosX += dx * MOVE_SPEED * deltaTime;
+    m_PosY += dy * MOVE_SPEED * deltaTime;
+
+    // Update facing direction from the final movement vector.
+    // Prefer horizontal when both axes are equally pressed.
+    if (len > 0.0f)
+    {
+        if (std::abs(dx) >= std::abs(dy))
+            m_Direction = (dx > 0.0f) ? Direction::Right : Direction::Left;
+        else
+            m_Direction = (dy > 0.0f) ? Direction::Down : Direction::Up;
+    }
+
+    // Clamp so the sprite stays fully inside the window.
+    const float half = DISPLAY_SIZE / 2.0f;
+    m_PosX = std::max(half, std::min(static_cast<float>(WINDOW_W) - half, m_PosX));
+    m_PosY = std::max(half, std::min(static_cast<float>(WINDOW_H) - half, m_PosY));
+
+    // --- Animation ---
+    const bool moving = (len > 0.0f);
+    if (moving)
+    {
+        m_AnimTime += deltaTime;
+        if (m_AnimTime >= FRAME_DURATION)
+        {
+            m_AnimTime -= FRAME_DURATION;
+            m_AnimFrame = (m_AnimFrame + 1) % FRAME_COUNT;
+        }
+    }
+    else
+    {
+        // Stand still at frame 0.
+        m_AnimFrame = 0;
+        m_AnimTime  = 0.0f;
     }
 }
 
 void PlayingState::Render()
 {
-    if (!m_NeedsRedraw)
+    if (!m_Renderer)
         return;
-    m_NeedsRedraw = false;
 
-    ConsoleUtils::ClearScreen();
+    m_Renderer->Clear(RenderColor::Black());
 
-    ConsoleUtils::SetCursorPosition(0, 0);
-    std::cout << "=== GAME SCREEN ===";
+    // Select the sprite sheet and whether to mirror it.
+    int  texId = m_TexDown;
+    bool flipX = false;
 
-    // Draw one solid-block character as the "pixel"
-    ConsoleUtils::SetCursorPosition(m_PixelX, m_PixelY);
-    std::cout << BLOCK_CHARACTER;  // CP437 full-block: █
+    switch (m_Direction)
+    {
+    case Direction::Up:    texId = m_TexUp;               break;
+    case Direction::Left:  texId = m_TexSide; flipX = true; break;
+    case Direction::Right: texId = m_TexSide;              break;
+    default: /* Down */    texId = m_TexDown;             break;
+    }
 
-    ConsoleUtils::SetCursorPosition(0, SCREEN_HEIGHT - 1);
-    std::cout << "Use arrow keys to move | Press ESC to return to Main Menu";
+    // Draw the sprite centred on the player position.
+    const int drawX = static_cast<int>(m_PosX) - DISPLAY_SIZE / 2;
+    const int drawY = static_cast<int>(m_PosY) - DISPLAY_SIZE / 2;
 
-    std::cout << std::flush;
+    m_Renderer->DrawSprite(texId,
+                           FRAME_W, FRAME_H,
+                           m_AnimFrame, 0,
+                           drawX, drawY,
+                           DISPLAY_SIZE, DISPLAY_SIZE,
+                           flipX);
+
+    m_Renderer->Present();
 }

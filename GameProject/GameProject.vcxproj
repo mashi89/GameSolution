@@ -145,6 +145,7 @@
     <ClCompile Include="ConsoleUtils.cpp" />
     <ClCompile Include="MainMenuState.cpp" />
     <ClCompile Include="PlayingState.cpp" />
+    <ClCompile Include="RaylibRenderer.cpp" />
   </ItemGroup>
 
   <!-- ===== HEADER FILES ===== -->
@@ -163,6 +164,7 @@
     <ClInclude Include="ConsoleUtils.h" />
     <ClInclude Include="MainMenuState.h" />
     <ClInclude Include="PlayingState.h" />
+    <ClInclude Include="RaylibRenderer.h" />
   </ItemGroup>
 
   <!-- ===== ASSETS (none / content) ===== -->
@@ -171,8 +173,33 @@
     <None Include="assets\sounds\.gitkeep" />
     <None Include="assets\fonts\.gitkeep" />
     <None Include="assets\maps\.gitkeep" />
+    <None Include="packages.config" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+
+  <!-- ===== RAYLIB – NuGet package (packages.config) ===== -->
+  <!-- If you restored via NuGet the targets file is in packages\raylib.5.0.0\ -->
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(SolutionDir)packages\raylib.5.0.0\build\native\raylib.targets"
+            Condition="Exists('$(SolutionDir)packages\raylib.5.0.0\build\native\raylib.targets')" />
+  </ImportGroup>
+
+  <!-- Warn when the NuGet package has not been restored yet. -->
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references the NuGet package raylib 5.0.0 which is missing.
+Run "nuget restore" or right-click the solution → Restore NuGet Packages.
+Alternatively, install raylib via vcpkg (vcpkg.json is included in the repo root)
+and enable vcpkg integration (vcpkg integrate install).</ErrorText>
+    </PropertyGroup>
+    <Warning Condition="!Exists('$(SolutionDir)packages\raylib.5.0.0\build\native\raylib.targets')
+                    AND '$(VcpkgEnabled)' != 'true'"
+             Text="$(ErrorText)" />
+  </Target>
+
+  <!-- ===== RAYLIB – vcpkg (vcpkg.json manifest) ===== -->
+  <!-- When vcpkg integration is active the toolchain sets AdditionalIncludeDirectories
+       and AdditionalDependencies automatically; no extra entries are needed here. -->
+
 </Project>
