@@ -21,6 +21,9 @@ void GameManager::PopState()
     {
         m_States.top()->OnExit();
         m_States.pop();
+        // Notify the state that is now on top (if any) that it is active again
+        if (!m_States.empty())
+            m_States.top()->OnResume();
     }
 }
 

@@ -135,41 +135,34 @@
   <!-- ===== SOURCE FILES ===== -->
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <!-- Core -->
-    <ClCompile Include="src\core\Application.cpp" />
-    <ClCompile Include="src\core\GameLoop.cpp" />
-    <!-- Game -->
-    <ClCompile Include="src\game\GameManager.cpp" />
-    <ClCompile Include="src\game\Entity.cpp" />
-    <!-- Renderer -->
-    <ClCompile Include="src\renderer\Sprite.cpp" />
-    <!-- Network -->
-    <ClCompile Include="src\network\NetworkManager.cpp" />
-    <!-- Audio -->
-    <ClCompile Include="src\audio\AudioManager.cpp" />
-    <!-- Utils -->
-    <ClCompile Include="src\utils\Logger.cpp" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="GameLoop.cpp" />
+    <ClCompile Include="GameManager.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="NetworkManager.cpp" />
+    <ClCompile Include="AudioManager.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="ConsoleUtils.cpp" />
+    <ClCompile Include="MainMenuState.cpp" />
+    <ClCompile Include="PlayingState.cpp" />
   </ItemGroup>
 
   <!-- ===== HEADER FILES ===== -->
   <ItemGroup>
-    <!-- Core -->
-    <ClInclude Include="include\core\Application.h" />
-    <ClInclude Include="include\core\GameLoop.h" />
-    <!-- Game -->
-    <ClInclude Include="include\game\GameState.h" />
-    <ClInclude Include="include\game\GameManager.h" />
-    <ClInclude Include="include\game\Entity.h" />
-    <!-- Renderer -->
-    <ClInclude Include="include\renderer\Renderer.h" />
-    <ClInclude Include="include\renderer\Sprite.h" />
-    <!-- Network -->
-    <ClInclude Include="include\network\NetworkManager.h" />
-    <!-- Audio -->
-    <ClInclude Include="include\audio\AudioManager.h" />
-    <!-- Utils -->
-    <ClInclude Include="include\utils\Logger.h" />
-    <ClInclude Include="include\utils\MathUtils.h" />
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="GameLoop.h" />
+    <ClInclude Include="GameState.h" />
+    <ClInclude Include="GameManager.h" />
+    <ClInclude Include="Entity.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="NetworkManager.h" />
+    <ClInclude Include="AudioManager.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="MathUtils.h" />
+    <ClInclude Include="ConsoleUtils.h" />
+    <ClInclude Include="MainMenuState.h" />
+    <ClInclude Include="PlayingState.h" />
   </ItemGroup>
 
   <!-- ===== ASSETS (none / content) ===== -->
