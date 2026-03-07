@@ -14,4 +14,6 @@ public:
 
 private:
     bool m_NeedsRedraw = true;
+    int  m_PixelX = 40;   // starts at centre (SCREEN_WIDTH / 2)
+    int  m_PixelY = 12;   // starts at centre (SCREEN_HEIGHT / 2)
 };

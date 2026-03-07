@@ -134,6 +134,8 @@ int ConsoleUtils::ReadKey()
             setRawMode(false);
             if (ch3 == 'A') return KEY_ARROW_UP;
             if (ch3 == 'B') return KEY_ARROW_DOWN;
+            if (ch3 == 'C') return KEY_ARROW_RIGHT;
+            if (ch3 == 'D') return KEY_ARROW_LEFT;
             return KEY_ESC;
         }
         setRawMode(false);

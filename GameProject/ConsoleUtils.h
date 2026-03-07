@@ -5,8 +5,10 @@ namespace ConsoleUtils
     // Key code constants
     static const int KEY_ESC        = 27;
     static const int KEY_ENTER      = 13;
-    static const int KEY_ARROW_UP   = 256 + 72;
-    static const int KEY_ARROW_DOWN = 256 + 80;
+    static const int KEY_ARROW_UP    = 256 + 72;
+    static const int KEY_ARROW_DOWN  = 256 + 80;
+    static const int KEY_ARROW_LEFT  = 256 + 75;
+    static const int KEY_ARROW_RIGHT = 256 + 77;
 
     // Clear the console screen
     void ClearScreen();
@@ -21,6 +23,6 @@ namespace ConsoleUtils
     bool KeyAvailable();
 
     // Blocking read of the next key.
-    // Arrow-key sequences are collapsed: up -> KEY_ARROW_UP, down -> KEY_ARROW_DOWN.
+    // Arrow-key sequences are collapsed: up/down/left/right -> KEY_ARROW_*.
     int  ReadKey();
 }
