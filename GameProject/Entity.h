@@ -1,5 +1,5 @@
 #pragma once
-#include "../utils/MathUtils.h"
+#include "MathUtils.h"
 #include <string>
 
 class Entity
