@@ -7,8 +7,9 @@ class GameState
 {
 public:
     virtual ~GameState() = default;
-    virtual void OnEnter() = 0;
-    virtual void OnExit()  = 0;
+    virtual void OnEnter()  = 0;
+    virtual void OnExit()   = 0;
+    virtual void OnResume() {}  // Called when this state is revealed after a pop
     virtual void Update(float deltaTime) = 0;
     virtual void Render() = 0;
     virtual GameStateType GetType() const = 0;
