@@ -16,21 +16,3 @@ private:
     float m_DeltaTime;
     std::chrono::time_point<std::chrono::high_resolution_clock> m_LastTime;
 };
-
-// inline implementations
-inline GameLoop::GameLoop()
-    : m_Running(false), m_DeltaTime(0.0f), m_LastTime(std::chrono::high_resolution_clock::now())
-{
-}
-
-inline void GameLoop::Start()
-{
-    m_Running = true;
-    m_LastTime = std::chrono::high_resolution_clock::now();
-}
-
-inline void GameLoop::Stop()
-{
-    m_Running = false;
-}
-

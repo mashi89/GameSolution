@@ -21,34 +21,3 @@ private:
     ConnectionStatus m_Status = ConnectionStatus::Disconnected;
     MessageCallback  m_OnMessage;
 };
-
-// inline implementations
-inline NetworkManager& NetworkManager::GetInstance()
-{
-    static NetworkManager instance;
-    return instance;
-}
-
-inline bool NetworkManager::Connect(const std::string& host, int port)
-{
-    (void)host; (void)port;
-    m_Status = ConnectionStatus::Connected;
-    return true;
-}
-
-inline void NetworkManager::Disconnect()
-{
-    m_Status = ConnectionStatus::Disconnected;
-}
-
-inline bool NetworkManager::Send(const std::string& message)
-{
-    (void)message;
-    return m_Status == ConnectionStatus::Connected;
-}
-
-inline void NetworkManager::Update()
-{
-    // stub: no network activity
-}
-
