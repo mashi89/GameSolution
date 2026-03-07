@@ -25,7 +25,7 @@ public:
     bool Initialize(int width, int height, const std::string& title) override;
     void Shutdown() override;
     // Begins a new frame and clears the back-buffer to the given colour.
-    void Clear(Color clearColor = Color::Black()) override;
+    void Clear(RenderColor clearColor = RenderColor::Black()) override;
     // Ends the frame and presents it to the screen.
     void Present() override;
 

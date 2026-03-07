@@ -1,5 +1,5 @@
+#include <raylib.h>   // Must come first so raylib's Color is defined before our headers.
 #include "RaylibRenderer.h"
-#include <raylib.h>   // Only this translation unit pulls in raylib.
 
 // ---------------------------------------------------------------------------
 // Initialize / Shutdown
@@ -50,10 +50,10 @@ void RaylibRenderer::Shutdown()
 // Frame lifecycle
 // ---------------------------------------------------------------------------
 
-void RaylibRenderer::Clear(Color c)
+void RaylibRenderer::Clear(RenderColor c)
 {
     BeginDrawing();
-    ::Color rlColor{
+    Color rlColor{
         static_cast<unsigned char>(c.r * 255.0f),
         static_cast<unsigned char>(c.g * 255.0f),
         static_cast<unsigned char>(c.b * 255.0f),
@@ -123,7 +123,8 @@ void RaylibRenderer::DrawSprite(int  sheetId,
     };
     Vector2 origin{ 0.0f, 0.0f };
 
-    DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
+    Color white{ 255, 255, 255, 255 };
+    DrawTexturePro(tex, src, dst, origin, 0.0f, white);
 }
 
 // ---------------------------------------------------------------------------

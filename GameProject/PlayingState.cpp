@@ -4,6 +4,11 @@
 #include <algorithm>
 #include <cmath>
 
+PlayingState::PlayingState() = default;
+PlayingState::~PlayingState() = default;
+
+
+
 // Relative path to the Body_A walk sprite sheets.
 // The working directory when launched from Visual Studio is the project folder.
 static constexpr const char* ASSET_WALK_DOWN =
@@ -110,7 +115,7 @@ void PlayingState::Render()
     if (!m_Renderer)
         return;
 
-    m_Renderer->Clear(Color::Black());
+    m_Renderer->Clear(RenderColor::Black());
 
     // Select the sprite sheet and whether to mirror it.
     int  texId = m_TexDown;
