@@ -2,7 +2,9 @@
 #include "RaylibRenderer.h"
 #include "GameManager.h"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <random>
 
 PlayingState::PlayingState() = default;
 PlayingState::~PlayingState() = default;
@@ -22,6 +24,16 @@ static constexpr const char* ASSET_WALK_UP =
 static constexpr const char* ASSET_TILESET =
     "VisualAssets/EnvironmentPack/EnvironmentPack/Decorations/TileSet.png";
 
+// Animated pine tree sprite sheets (from EnvironmentPack/AnimatedTrees/PineTree).
+// Each sheet is 1024×128 px containing 8 frames of 128×128.
+static constexpr const char* ASSET_PINE_TREES[5] = {
+    "VisualAssets/EnvironmentPack/EnvironmentPack/AnimatedTrees/PineTree/WarmColor.png",
+    "VisualAssets/EnvironmentPack/EnvironmentPack/AnimatedTrees/PineTree/PineTreeCoolColor.png",
+    "VisualAssets/EnvironmentPack/EnvironmentPack/AnimatedTrees/PineTree/Autumn.png",
+    "VisualAssets/EnvironmentPack/EnvironmentPack/AnimatedTrees/PineTree/PreAutumn.png",
+    "VisualAssets/EnvironmentPack/EnvironmentPack/AnimatedTrees/PineTree/Winter.png",
+};
+
 void PlayingState::OnEnter()
 {
     m_Renderer = std::make_unique<RaylibRenderer>();
@@ -31,6 +43,30 @@ void PlayingState::OnEnter()
     m_TexSide  = m_Renderer->LoadSpriteSheet(ASSET_WALK_SIDE);
     m_TexUp    = m_Renderer->LoadSpriteSheet(ASSET_WALK_UP);
     m_TexGrass = m_Renderer->LoadSpriteSheet(ASSET_TILESET);
+
+    // Load the animated pine tree variant textures.
+    for (int i = 0; i < TREE_VARIANT_COUNT; ++i)
+        m_TexTrees[i] = m_Renderer->LoadSpriteSheet(ASSET_PINE_TREES[i]);
+
+    // Generate 30 randomly distributed pine trees for this game-level start.
+    // XOR a std::random_device value with a steady-clock timestamp so the seed
+    // is different every entry even on platforms where random_device has low
+    // entropy or returns a fixed value.
+    const auto timeSeed = static_cast<std::uint32_t>(
+        std::chrono::steady_clock::now().time_since_epoch().count());
+    std::mt19937 rng{ std::random_device{}() ^ timeSeed };
+    const float margin = TREE_DISPLAY_SIZE / 2.0f;
+    std::uniform_real_distribution<float> distX(margin, static_cast<float>(MAP_W) - margin);
+    std::uniform_real_distribution<float> distY(margin, static_cast<float>(MAP_H) - margin);
+    std::uniform_int_distribution<int>    distVariant(0, TREE_VARIANT_COUNT - 1);
+
+    m_Trees.clear();
+    m_Trees.reserve(TREE_COUNT);
+    for (int i = 0; i < TREE_COUNT; ++i)
+        m_Trees.push_back({ distX(rng), distY(rng), distVariant(rng) });
+
+    m_TreeAnimFrame = 0;
+    m_TreeAnimTime  = 0.0f;
 
     // Place the player at the centre of the world map.
     m_PosX      = MAP_W / 2.0f;
@@ -48,6 +84,7 @@ void PlayingState::OnEnter()
 
 void PlayingState::OnExit()
 {
+    m_Trees.clear();
     m_Renderer.reset();
 }
 
@@ -126,6 +163,14 @@ void PlayingState::Update(float deltaTime)
         m_AnimFrame = 0;
         m_AnimTime  = 0.0f;
     }
+
+    // --- Pine tree animation (runs continuously, independent of player movement) ---
+    m_TreeAnimTime += deltaTime;
+    if (m_TreeAnimTime >= TREE_FRAME_DURATION)
+    {
+        m_TreeAnimTime -= TREE_FRAME_DURATION;
+        m_TreeAnimFrame = (m_TreeAnimFrame + 1) % TREE_FRAME_COUNT;
+    }
 }
 
 void PlayingState::Render()
@@ -177,6 +222,30 @@ void PlayingState::Render()
                                        TILE_DST_SIZE, TILE_DST_SIZE);
             }
         }
+    }
+
+    // --- Draw pine trees ---
+    for (const auto& tree : m_Trees)
+    {
+        const int treeTexId = m_TexTrees[tree.variantIdx];
+        if (treeTexId < 0)
+            continue;
+
+        // Convert world position to screen position (top-left of the sprite).
+        const int treeScreenX = static_cast<int>(tree.x - m_CamX) - TREE_DISPLAY_SIZE / 2;
+        const int treeScreenY = static_cast<int>(tree.y - m_CamY) - TREE_DISPLAY_SIZE / 2;
+
+        // Skip trees that are fully outside the visible area.
+        if (treeScreenX + TREE_DISPLAY_SIZE < 0 || treeScreenX >= WINDOW_W)
+            continue;
+        if (treeScreenY + TREE_DISPLAY_SIZE < 0 || treeScreenY >= WINDOW_H)
+            continue;
+
+        m_Renderer->DrawSprite(treeTexId,
+                               TREE_FRAME_W, TREE_FRAME_H,
+                               m_TreeAnimFrame, 0,
+                               treeScreenX, treeScreenY,
+                               TREE_DISPLAY_SIZE, TREE_DISPLAY_SIZE);
     }
 
     // --- Draw player sprite ---
