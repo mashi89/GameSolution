@@ -18,20 +18,32 @@ static constexpr const char* ASSET_WALK_SIDE =
 static constexpr const char* ASSET_WALK_UP =
     "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png";
 
+// Grass tileset from the EnvironmentPack Decorations folder.
+static constexpr const char* ASSET_TILESET =
+    "VisualAssets/EnvironmentPack/EnvironmentPack/Decorations/TileSet.png";
+
 void PlayingState::OnEnter()
 {
     m_Renderer = std::make_unique<RaylibRenderer>();
     m_Renderer->Initialize(WINDOW_W, WINDOW_H, "Game Screen");
 
-    m_TexDown = m_Renderer->LoadSpriteSheet(ASSET_WALK_DOWN);
-    m_TexSide = m_Renderer->LoadSpriteSheet(ASSET_WALK_SIDE);
-    m_TexUp   = m_Renderer->LoadSpriteSheet(ASSET_WALK_UP);
+    m_TexDown  = m_Renderer->LoadSpriteSheet(ASSET_WALK_DOWN);
+    m_TexSide  = m_Renderer->LoadSpriteSheet(ASSET_WALK_SIDE);
+    m_TexUp    = m_Renderer->LoadSpriteSheet(ASSET_WALK_UP);
+    m_TexGrass = m_Renderer->LoadSpriteSheet(ASSET_TILESET);
 
-    m_PosX      = WINDOW_W / 2.0f;
-    m_PosY      = WINDOW_H / 2.0f;
+    // Place the player at the centre of the world map.
+    m_PosX      = MAP_W / 2.0f;
+    m_PosY      = MAP_H / 2.0f;
     m_Direction = Direction::Down;
     m_AnimFrame = 0;
     m_AnimTime  = 0.0f;
+
+    // Initialise the camera so the player starts centred on screen.
+    m_CamX = std::max(0.0f, std::min(static_cast<float>(MAP_W - WINDOW_W),
+                                     m_PosX - WINDOW_W / 2.0f));
+    m_CamY = std::max(0.0f, std::min(static_cast<float>(MAP_H - WINDOW_H),
+                                     m_PosY - WINDOW_H / 2.0f));
 }
 
 void PlayingState::OnExit()
@@ -86,10 +98,16 @@ void PlayingState::Update(float deltaTime)
             m_Direction = (dy > 0.0f) ? Direction::Down : Direction::Up;
     }
 
-    // Clamp so the sprite stays fully inside the window.
+    // Clamp so the sprite stays fully inside the world map.
     const float half = DISPLAY_SIZE / 2.0f;
-    m_PosX = std::max(half, std::min(static_cast<float>(WINDOW_W) - half, m_PosX));
-    m_PosY = std::max(half, std::min(static_cast<float>(WINDOW_H) - half, m_PosY));
+    m_PosX = std::max(half, std::min(static_cast<float>(MAP_W) - half, m_PosX));
+    m_PosY = std::max(half, std::min(static_cast<float>(MAP_H) - half, m_PosY));
+
+    // --- Camera: follow the player, clamped to map edges ---
+    m_CamX = m_PosX - WINDOW_W / 2.0f;
+    m_CamY = m_PosY - WINDOW_H / 2.0f;
+    m_CamX = std::max(0.0f, std::min(static_cast<float>(MAP_W - WINDOW_W), m_CamX));
+    m_CamY = std::max(0.0f, std::min(static_cast<float>(MAP_H - WINDOW_H), m_CamY));
 
     // --- Animation ---
     const bool moving = (len > 0.0f);
@@ -115,23 +133,67 @@ void PlayingState::Render()
     if (!m_Renderer)
         return;
 
-    m_Renderer->Clear(RenderColor::Black());
+    // Dark-green clear colour used as the fallback when the tileset fails to load.
+    m_Renderer->Clear(RenderColor(0.13f, 0.42f, 0.13f));
 
-    // Select the sprite sheet and whether to mirror it.
+    // --- Draw tiled grass background ---
+    if (m_TexGrass >= 0)
+    {
+        const int camLeft = static_cast<int>(m_CamX);
+        const int camTop  = static_cast<int>(m_CamY);
+
+        // First tile index (in map-tile coordinates) that is at least partially visible.
+        const int tileStartX = camLeft / TILE_DST_SIZE;
+        const int tileStartY = camTop  / TILE_DST_SIZE;
+
+        // Number of tiles required to fill the window (add 2 for partial overlap).
+        const int tilesAcross = WINDOW_W / TILE_DST_SIZE + 2;
+        const int tilesDown   = WINDOW_H / TILE_DST_SIZE + 2;
+
+        for (int ty = tileStartY; ty < tileStartY + tilesDown; ++ty)
+        {
+            for (int tx = tileStartX; tx < tileStartX + tilesAcross; ++tx)
+            {
+                // Skip tiles that start outside or extend fully beyond the map.
+                const int worldX = tx * TILE_DST_SIZE;
+                const int worldY = ty * TILE_DST_SIZE;
+                if (worldX < 0 || worldY < 0 ||
+                    worldX + TILE_DST_SIZE > MAP_W || worldY + TILE_DST_SIZE > MAP_H)
+                    continue;
+
+                // Convert world position to screen position.
+                const int screenX = worldX - camLeft;
+                const int screenY = worldY - camTop;
+
+                // Alternate between two grass tile columns for a natural look.
+                // Both are from the solid-green row (row 1) of the tileset.
+                const int tileCol = (tx + ty) % 2;
+                const int tileRow = 1;
+
+                m_Renderer->DrawSprite(m_TexGrass,
+                                       TILE_SRC_SIZE, TILE_SRC_SIZE,
+                                       tileCol, tileRow,
+                                       screenX, screenY,
+                                       TILE_DST_SIZE, TILE_DST_SIZE);
+            }
+        }
+    }
+
+    // --- Draw player sprite ---
     int  texId = m_TexDown;
     bool flipX = false;
 
     switch (m_Direction)
     {
-    case Direction::Up:    texId = m_TexUp;               break;
+    case Direction::Up:    texId = m_TexUp;                break;
     case Direction::Left:  texId = m_TexSide; flipX = true; break;
     case Direction::Right: texId = m_TexSide;              break;
-    default: /* Down */    texId = m_TexDown;             break;
+    default: /* Down */    texId = m_TexDown;              break;
     }
 
-    // Draw the sprite centred on the player position.
-    const int drawX = static_cast<int>(m_PosX) - DISPLAY_SIZE / 2;
-    const int drawY = static_cast<int>(m_PosY) - DISPLAY_SIZE / 2;
+    // Convert world position to screen position.
+    const int drawX = static_cast<int>(m_PosX - m_CamX) - DISPLAY_SIZE / 2;
+    const int drawY = static_cast<int>(m_PosY - m_CamY) - DISPLAY_SIZE / 2;
 
     m_Renderer->DrawSprite(texId,
                            FRAME_W, FRAME_H,

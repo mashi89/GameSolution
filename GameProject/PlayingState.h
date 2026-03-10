@@ -36,9 +36,14 @@ private:
     float m_AnimTime  = 0.0f;
 
     // Loaded sprite-sheet slot indices (set by OnEnter).
-    int m_TexDown = -1;
-    int m_TexSide = -1;
-    int m_TexUp   = -1;
+    int m_TexDown  = -1;
+    int m_TexSide  = -1;
+    int m_TexUp    = -1;
+    int m_TexGrass = -1;  // TileSet.png grass tiles
+
+    // Camera world-space position (top-left corner of the visible area).
+    float m_CamX = 0.0f;
+    float m_CamY = 0.0f;
 
     // Sprite-sheet constants.
     static constexpr int   FRAME_W        = 64;   // pixels per frame
@@ -51,4 +56,10 @@ private:
     static constexpr int   WINDOW_H       = 600;
     static constexpr int   DISPLAY_SIZE   = 192;  // draw sprite at 3× scale
     static constexpr float MOVE_SPEED     = 200.0f; // pixels per second
+
+    // Map / tile constants.
+    static constexpr int MAP_W         = WINDOW_W * 2;  // 4× window area (2× each dimension)
+    static constexpr int MAP_H         = WINDOW_H * 2;
+    static constexpr int TILE_SRC_SIZE = 16;  // source pixels per tile in TileSet.png
+    static constexpr int TILE_DST_SIZE = 32;  // on-screen pixels per tile (2× scale)
 };
