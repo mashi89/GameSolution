@@ -1,6 +1,7 @@
 #include "PlayingState.h"
 #include "RaylibRenderer.h"
 #include "GameManager.h"
+#include "MathUtils.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -137,6 +138,24 @@ void PlayingState::Update(float deltaTime)
 
     // Clamp so the sprite stays fully inside the world map.
     const float half = DISPLAY_SIZE / 2.0f;
+    m_PosX = std::max(half, std::min(static_cast<float>(MAP_W) - half, m_PosX));
+    m_PosY = std::max(half, std::min(static_cast<float>(MAP_H) - half, m_PosY));
+
+    // --- Collision detection: prevent player from walking through trees ---
+    // Trees are resolved one at a time (sequential push-out).  This is the
+    // standard iterative approach for game collision: each resolved position
+    // becomes the input for the next tree, so clusters of trees are handled
+    // correctly without the player tunnelling through them.
+    for (const auto& tree : m_Trees)
+    {
+        const Vec2 resolved = MathUtils::ResolveCircleOverlap(
+            {m_PosX, m_PosY}, {tree.x, tree.y},
+            PLAYER_COLLISION_RADIUS, TREE_COLLISION_RADIUS);
+        m_PosX = resolved.x;
+        m_PosY = resolved.y;
+    }
+
+    // Re-clamp after collision resolution (a tree near a map edge could push the player out).
     m_PosX = std::max(half, std::min(static_cast<float>(MAP_W) - half, m_PosX));
     m_PosY = std::max(half, std::min(static_cast<float>(MAP_H) - half, m_PosY));
 

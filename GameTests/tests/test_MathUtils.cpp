@@ -164,3 +164,55 @@ TEST(Vec2, DotProductParallel)
     Vec2 b(2.0f, 3.0f);
     EXPECT_FLOAT_EQ(a.Dot(b), a.x * b.x + a.y * b.y);
 }
+
+// -------------------------------------------------------------------------
+// MathUtils::ResolveCircleOverlap
+// -------------------------------------------------------------------------
+
+TEST(ResolveCircleOverlap, NoOverlapReturnsPosA)
+{
+    // Circles 100 units apart with combined radius of 66 – no overlap.
+    Vec2 result = MathUtils::ResolveCircleOverlap({200.0f, 0.0f}, {0.0f, 0.0f}, 30.0f, 36.0f);
+    EXPECT_FLOAT_EQ(result.x, 200.0f);
+    EXPECT_FLOAT_EQ(result.y, 0.0f);
+}
+
+TEST(ResolveCircleOverlap, ExactTouchReturnsPosA)
+{
+    // Distance == sum of radii → touching but not overlapping.
+    Vec2 result = MathUtils::ResolveCircleOverlap({66.0f, 0.0f}, {0.0f, 0.0f}, 30.0f, 36.0f);
+    EXPECT_FLOAT_EQ(result.x, 66.0f);
+    EXPECT_FLOAT_EQ(result.y, 0.0f);
+}
+
+TEST(ResolveCircleOverlap, HorizontalOverlapPushedOut)
+{
+    // Player at (50,0), tree at (0,0), radii 30+36=66.  Distance=50 < 66 → overlap of 16.
+    Vec2 result = MathUtils::ResolveCircleOverlap({50.0f, 0.0f}, {0.0f, 0.0f}, 30.0f, 36.0f);
+    EXPECT_NEAR(result.x, 66.0f, 1e-4f);
+    EXPECT_NEAR(result.y,  0.0f, 1e-4f);
+}
+
+TEST(ResolveCircleOverlap, VerticalOverlapPushedOut)
+{
+    // Player at (0,50), tree at (0,0), same radii.
+    Vec2 result = MathUtils::ResolveCircleOverlap({0.0f, 50.0f}, {0.0f, 0.0f}, 30.0f, 36.0f);
+    EXPECT_NEAR(result.x,  0.0f, 1e-4f);
+    EXPECT_NEAR(result.y, 66.0f, 1e-4f);
+}
+
+TEST(ResolveCircleOverlap, CoincidentCentresReturnsPosA)
+{
+    // distSq == 0 – avoid division by zero; posA returned unchanged.
+    Vec2 result = MathUtils::ResolveCircleOverlap({5.0f, 5.0f}, {5.0f, 5.0f}, 30.0f, 36.0f);
+    EXPECT_FLOAT_EQ(result.x, 5.0f);
+    EXPECT_FLOAT_EQ(result.y, 5.0f);
+}
+
+TEST(ResolveCircleOverlap, DiagonalOverlapPushedOutCorrectly)
+{
+    // Player at (3,4) relative to tree at origin → distance=5, minDist=10 → pushed to distance=10.
+    Vec2 result = MathUtils::ResolveCircleOverlap({3.0f, 4.0f}, {0.0f, 0.0f}, 5.0f, 5.0f);
+    EXPECT_NEAR(result.x,  6.0f, 1e-4f);
+    EXPECT_NEAR(result.y,  8.0f, 1e-4f);
+}
