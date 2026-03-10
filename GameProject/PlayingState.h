@@ -1,11 +1,20 @@
 #pragma once
 #include "GameState.h"
 #include <memory>
+#include <vector>
 
 class RaylibRenderer;
 
 // Movement direction used to select the correct Body_A walk sprite sheet.
 enum class Direction { Down, Up, Left, Right };
+
+// A single pine tree instance placed in the world.
+struct TreeInstance
+{
+    float x;           // world-space centre X
+    float y;           // world-space centre Y
+    int   variantIdx;  // which pine tree color variant to draw (0–4)
+};
 
 class PlayingState : public GameState
 {
@@ -62,4 +71,24 @@ private:
     static constexpr int MAP_H         = WINDOW_H * 2;
     static constexpr int TILE_SRC_SIZE = 16;  // source pixels per tile in TileSet.png
     static constexpr int TILE_DST_SIZE = 32;  // on-screen pixels per tile (2× scale)
+
+    // Pine tree sprite constants.
+    // Each PineTree sheet is 1024×128 px → 8 frames of 128×128 across one row.
+    static constexpr int   TREE_VARIANT_COUNT  = 5;    // WarmColor, CoolColor, Autumn, PreAutumn, Winter
+    static constexpr int   TREE_COUNT          = 100;   // trees spawned per game-level start
+    static constexpr int   TREE_FRAME_W        = 128;  // source pixels per frame (width)
+    static constexpr int   TREE_FRAME_H        = 128;  // source pixels per frame (height)
+    static constexpr int   TREE_FRAME_COUNT    = 8;    // 1024 / 128
+    static constexpr float TREE_FRAME_DURATION = 0.15f; // seconds per frame
+    static constexpr int   TREE_DISPLAY_SIZE   = 128;  // on-screen size in pixels (1:1 scale)
+
+    // Loaded pine tree variant textures (indexed 0–4: WarmColor, CoolColor, Autumn, PreAutumn, Winter).
+    int m_TexTrees[TREE_VARIANT_COUNT] = { -1, -1, -1, -1, -1 };
+
+    // Randomly distributed pine tree instances – regenerated every OnEnter().
+    std::vector<TreeInstance> m_Trees;
+
+    // Shared pine tree animation state.
+    int   m_TreeAnimFrame = 0;
+    float m_TreeAnimTime  = 0.0f;
 };
