@@ -64,7 +64,9 @@ private:
     static constexpr int   WINDOW_W       = 800;
     static constexpr int   WINDOW_H       = 600;
     static constexpr int   DISPLAY_SIZE   = 192;  // draw sprite at 3× scale
-    static constexpr float MOVE_SPEED     = 200.0f; // pixels per second
+    static constexpr float MOVE_SPEED               = 200.0f; // pixels per second
+    static constexpr float PLAYER_COLLISION_RADIUS  = 30.0f;  // world-space circle radius for player
+    static constexpr float TREE_COLLISION_RADIUS    = 36.0f;  // world-space circle radius for trees
 
     // Map / tile constants.
     static constexpr int MAP_W         = WINDOW_W * 2;  // 4× window area (2× each dimension)

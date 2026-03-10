@@ -21,3 +21,26 @@ struct Vec2
     Vec2  Normalized()             const { float l = Length(); return l > 0 ? Vec2{x/l,y/l} : Vec2{}; }
     float Dot(const Vec2& o)       const { return x*o.x + y*o.y; }
 };
+
+namespace MathUtils
+{
+    // Returns the new position of circle A after resolving its overlap with
+    // stationary circle B.  posA and posB are world-space centre coordinates;
+    // radiusA and radiusB are the (positive) collision radii of each circle.
+    // When the circles do not overlap, or when their centres are coincident
+    // (distance == 0, preventing a safe push direction), posA is returned
+    // unchanged.
+    inline Vec2 ResolveCircleOverlap(Vec2 posA, Vec2 posB, float radiusA, float radiusB)
+    {
+        const Vec2  diff    = posA - posB;
+        const float distSq  = diff.Dot(diff);
+        const float minDist = radiusA + radiusB;
+        if (distSq > 0.0f && distSq < minDist * minDist)
+        {
+            const float dist    = std::sqrt(distSq);
+            const float overlap = minDist - dist;
+            return posA + diff * (overlap / dist);
+        }
+        return posA;
+    }
+}
