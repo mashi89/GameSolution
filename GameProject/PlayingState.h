@@ -75,7 +75,7 @@ private:
     // Pine tree sprite constants.
     // Each PineTree sheet is 1024×128 px → 8 frames of 128×128 across one row.
     static constexpr int   TREE_VARIANT_COUNT  = 5;    // WarmColor, CoolColor, Autumn, PreAutumn, Winter
-    static constexpr int   TREE_COUNT          = 30;   // trees spawned per game-level start
+    static constexpr int   TREE_COUNT          = 100;   // trees spawned per game-level start
     static constexpr int   TREE_FRAME_W        = 128;  // source pixels per frame (width)
     static constexpr int   TREE_FRAME_H        = 128;  // source pixels per frame (height)
     static constexpr int   TREE_FRAME_COUNT    = 8;    // 1024 / 128
