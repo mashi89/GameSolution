@@ -12,11 +12,11 @@ PlayingState::~PlayingState() = default;
 // Relative path to the Body_A walk sprite sheets.
 // The working directory when launched from Visual Studio is the project folder.
 static constexpr const char* ASSET_WALK_DOWN =
-    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png";
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png";
 static constexpr const char* ASSET_WALK_SIDE =
-    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png";
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png";
 static constexpr const char* ASSET_WALK_UP =
-    "VisualAssets/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png";
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png";
 
 void PlayingState::OnEnter()
 {
