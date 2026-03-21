@@ -350,7 +350,7 @@ void PlayingState::Render()
         const int drawX = static_cast<int>(m_PosX - m_CamX) - DISPLAY_SIZE / 2;
         const int drawY = static_cast<int>(m_PosY - m_CamY) - DISPLAY_SIZE / 2;
 
-        drawList.push_back({ m_PosY + DISPLAY_SIZE / 2.0f,
+        drawList.push_back({ m_PosY,
                              texId,
                              FRAME_W, FRAME_H, frame,
                              drawX, drawY,
