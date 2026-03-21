@@ -311,7 +311,7 @@ void PlayingState::Render()
         if (sy + TREE_DISPLAY_SIZE < 0 || sy >= WINDOW_H)
             continue;
 
-        drawList.push_back({ tree.y + TREE_DISPLAY_SIZE / 2.0f,
+        drawList.push_back({ tree.y,
                              treeTexId,
                              TREE_FRAME_W, TREE_FRAME_H, m_TreeAnimFrame,
                              sx, sy,
