@@ -44,5 +44,6 @@
 .vs/
 /GameProject/x64/Debug
 /.vscode
+/.claude/settings.local.json
 /GameProject/game.log
 /.vs/GameSolution/v17/Browse.VC.db
