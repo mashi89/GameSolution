@@ -7,6 +7,7 @@
 // do not need to include raylib.h directly and avoid the Color name collision.
 namespace RaylibKey
 {
+    constexpr int Space  =  32;
     constexpr int Escape = 256;
     constexpr int Right  = 262;
     constexpr int Left   = 263;

@@ -20,6 +20,14 @@ static constexpr const char* ASSET_WALK_SIDE =
 static constexpr const char* ASSET_WALK_UP =
     "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png";
 
+// Body_A slice animation sheets.
+static constexpr const char* ASSET_SLICE_DOWN =
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Slice_Base/Slice_Down-Sheet.png";
+static constexpr const char* ASSET_SLICE_SIDE =
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Slice_Base/Slice_Side-Sheet.png";
+static constexpr const char* ASSET_SLICE_UP =
+    "VisualAssets/Pixel Crawler - Free Pack/Entities/Characters/Body_A/Animations/Slice_Base/Slice_Up-Sheet.png";
+
 // Grass tileset from the EnvironmentPack Decorations folder.
 static constexpr const char* ASSET_TILESET =
     "VisualAssets/EnvironmentPack/EnvironmentPack/Decorations/TileSet.png";
@@ -43,6 +51,10 @@ void PlayingState::OnEnter()
     m_TexSide  = m_Renderer->LoadSpriteSheet(ASSET_WALK_SIDE);
     m_TexUp    = m_Renderer->LoadSpriteSheet(ASSET_WALK_UP);
     m_TexGrass = m_Renderer->LoadSpriteSheet(ASSET_TILESET);
+
+    m_TexSliceDown = m_Renderer->LoadSpriteSheet(ASSET_SLICE_DOWN);
+    m_TexSliceSide = m_Renderer->LoadSpriteSheet(ASSET_SLICE_SIDE);
+    m_TexSliceUp   = m_Renderer->LoadSpriteSheet(ASSET_SLICE_UP);
 
     // Load the animated pine tree variant textures.
     for (int i = 0; i < TREE_VARIANT_COUNT; ++i)
@@ -71,9 +83,12 @@ void PlayingState::OnEnter()
     // Place the player at the centre of the world map.
     m_PosX      = MAP_W / 2.0f;
     m_PosY      = MAP_H / 2.0f;
-    m_Direction = Direction::Down;
-    m_AnimFrame = 0;
-    m_AnimTime  = 0.0f;
+    m_Direction  = Direction::Down;
+    m_AnimFrame  = 0;
+    m_AnimTime   = 0.0f;
+    m_IsSlicing  = false;
+    m_SliceFrame = 0;
+    m_SliceTime  = 0.0f;
 
     // Initialise the camera so the player starts centred on screen.
     m_CamX = std::max(0.0f, std::min(static_cast<float>(MAP_W - WINDOW_W),
@@ -103,6 +118,47 @@ void PlayingState::Update(float deltaTime)
     if (m_Renderer->IsKeyPressed(RaylibKey::Escape))
     {
         GameManager::GetInstance().PopState();
+        return;
+    }
+
+    // --- Slice animation (takes priority over movement) ---
+    if (m_IsSlicing)
+    {
+        m_SliceTime += deltaTime;
+        if (m_SliceTime >= SLICE_FRAME_DURATION)
+        {
+            m_SliceTime -= SLICE_FRAME_DURATION;
+            ++m_SliceFrame;
+            if (m_SliceFrame >= SLICE_FRAME_COUNT)
+            {
+                // Animation complete – return to idle.
+                m_IsSlicing  = false;
+                m_SliceFrame = 0;
+                m_SliceTime  = 0.0f;
+            }
+        }
+        // Block movement and walk animation while slicing.
+        m_AnimFrame = 0;
+        m_AnimTime  = 0.0f;
+
+        // Still advance tree animation.
+        m_TreeAnimTime += deltaTime;
+        if (m_TreeAnimTime >= TREE_FRAME_DURATION)
+        {
+            m_TreeAnimTime -= TREE_FRAME_DURATION;
+            m_TreeAnimFrame = (m_TreeAnimFrame + 1) % TREE_FRAME_COUNT;
+        }
+        return;
+    }
+
+    // --- Trigger slice on spacebar press ---
+    if (m_Renderer->IsKeyPressed(RaylibKey::Space))
+    {
+        m_IsSlicing  = true;
+        m_SliceFrame = 0;
+        m_SliceTime  = 0.0f;
+        m_AnimFrame  = 0;
+        m_AnimTime   = 0.0f;
         return;
     }
 
@@ -146,7 +202,7 @@ void PlayingState::Update(float deltaTime)
     m_CamX = std::max(0.0f, std::min(static_cast<float>(MAP_W - WINDOW_W), m_CamX));
     m_CamY = std::max(0.0f, std::min(static_cast<float>(MAP_H - WINDOW_H), m_CamY));
 
-    // --- Animation ---
+    // --- Walk animation ---
     const bool moving = (len > 0.0f);
     if (moving)
     {
@@ -251,13 +307,32 @@ void PlayingState::Render()
     // --- Draw player sprite ---
     int  texId = m_TexDown;
     bool flipX = false;
+    int  frame = m_AnimFrame;
+    int  fw    = FRAME_W;
+    int  fh    = FRAME_H;
 
-    switch (m_Direction)
+    if (m_IsSlicing)
     {
-    case Direction::Up:    texId = m_TexUp;                break;
-    case Direction::Left:  texId = m_TexSide; flipX = true; break;
-    case Direction::Right: texId = m_TexSide;              break;
-    default: /* Down */    texId = m_TexDown;              break;
+        frame = m_SliceFrame;
+        fw    = FRAME_W;
+        fh    = FRAME_H;
+        switch (m_Direction)
+        {
+        case Direction::Up:    texId = m_TexSliceUp;                   break;
+        case Direction::Left:  texId = m_TexSliceSide; flipX = true;   break;
+        case Direction::Right: texId = m_TexSliceSide;                 break;
+        default: /* Down */    texId = m_TexSliceDown;                 break;
+        }
+    }
+    else
+    {
+        switch (m_Direction)
+        {
+        case Direction::Up:    texId = m_TexUp;                break;
+        case Direction::Left:  texId = m_TexSide; flipX = true; break;
+        case Direction::Right: texId = m_TexSide;              break;
+        default: /* Down */    texId = m_TexDown;              break;
+        }
     }
 
     // Convert world position to screen position.
@@ -265,8 +340,8 @@ void PlayingState::Render()
     const int drawY = static_cast<int>(m_PosY - m_CamY) - DISPLAY_SIZE / 2;
 
     m_Renderer->DrawSprite(texId,
-                           FRAME_W, FRAME_H,
-                           m_AnimFrame, 0,
+                           fw, fh,
+                           frame, 0,
                            drawX, drawY,
                            DISPLAY_SIZE, DISPLAY_SIZE,
                            flipX);

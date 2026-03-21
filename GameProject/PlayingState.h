@@ -44,11 +44,21 @@ private:
     int   m_AnimFrame = 0;
     float m_AnimTime  = 0.0f;
 
+    // Slice-animation state.
+    bool  m_IsSlicing   = false;
+    int   m_SliceFrame  = 0;
+    float m_SliceTime   = 0.0f;
+
     // Loaded sprite-sheet slot indices (set by OnEnter).
     int m_TexDown  = -1;
     int m_TexSide  = -1;
     int m_TexUp    = -1;
     int m_TexGrass = -1;  // TileSet.png grass tiles
+
+    // Slice animation sprite sheets.
+    int m_TexSliceDown = -1;
+    int m_TexSliceSide = -1;
+    int m_TexSliceUp   = -1;
 
     // Camera world-space position (top-left corner of the visible area).
     float m_CamX = 0.0f;
@@ -57,8 +67,10 @@ private:
     // Sprite-sheet constants.
     static constexpr int   FRAME_W        = 64;   // pixels per frame
     static constexpr int   FRAME_H        = 64;
-    static constexpr int   FRAME_COUNT    = 6;    // frames in each walk sheet
-    static constexpr float FRAME_DURATION = 0.10f; // seconds per frame (~10 fps)
+    static constexpr int   FRAME_COUNT       = 6;    // frames in each walk sheet
+    static constexpr float FRAME_DURATION    = 0.10f; // seconds per frame (~10 fps)
+    static constexpr int   SLICE_FRAME_COUNT = 6;    // frames in each slice sheet
+    static constexpr float SLICE_FRAME_DURATION = 0.10f;
 
     // Rendering constants.
     static constexpr int   WINDOW_W       = 800;
