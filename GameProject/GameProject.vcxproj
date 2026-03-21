@@ -132,6 +132,13 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <!-- ===== PRE-BUILD: generate VersionGenerated.h from git commit count ===== -->
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command>call "$(ProjectDir)GenerateVersion.bat"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+
   <!-- ===== SOURCE FILES ===== -->
   <ItemGroup>
     <ClCompile Include="main.cpp" />

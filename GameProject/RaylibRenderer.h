@@ -49,6 +49,10 @@ public:
                     int  destW,     int destH,
                     bool flipX = false);
 
+    // HUD text -----------------------------------------------------------------
+    // Draws a string directly to the screen (screen-space coordinates).
+    void DrawHudText(const std::string& text, int x, int y, int fontSize);
+
     // Input --------------------------------------------------------------------
     bool IsKeyDown(int rlKey)    const;  // true while key is held
     bool IsKeyPressed(int rlKey) const;  // true on the first frame the key is down

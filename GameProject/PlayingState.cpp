@@ -1,10 +1,12 @@
 #include "PlayingState.h"
 #include "RaylibRenderer.h"
 #include "GameManager.h"
+#include "Version.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <random>
+#include <string>
 
 PlayingState::PlayingState() = default;
 PlayingState::~PlayingState() = default;
@@ -280,71 +282,103 @@ void PlayingState::Render()
         }
     }
 
-    // --- Draw pine trees ---
+    // --- Y-sorted draw list (trees + player) ---
+    // Each sprite is sorted by the world-Y of its base (feet/root).
+    // Lower base Y = further "back" in the scene = drawn first (behind).
+    struct DrawCall
+    {
+        float sortY;                          // world-space base Y for depth sort
+        int   texId;
+        int   frameW, frameH, frameCol;
+        int   screenX, screenY;
+        int   destW, destH;
+        bool  flipX;
+    };
+
+    std::vector<DrawCall> drawList;
+    drawList.reserve(static_cast<int>(m_Trees.size()) + 1);
+
+    // Add visible trees.
     for (const auto& tree : m_Trees)
     {
         const int treeTexId = m_TexTrees[tree.variantIdx];
         if (treeTexId < 0)
             continue;
 
-        // Convert world position to screen position (top-left of the sprite).
-        const int treeScreenX = static_cast<int>(tree.x - m_CamX) - TREE_DISPLAY_SIZE / 2;
-        const int treeScreenY = static_cast<int>(tree.y - m_CamY) - TREE_DISPLAY_SIZE / 2;
+        const int sx = static_cast<int>(tree.x - m_CamX) - TREE_DISPLAY_SIZE / 2;
+        const int sy = static_cast<int>(tree.y - m_CamY) - TREE_DISPLAY_SIZE / 2;
 
-        // Skip trees that are fully outside the visible area.
-        if (treeScreenX + TREE_DISPLAY_SIZE < 0 || treeScreenX >= WINDOW_W)
+        if (sx + TREE_DISPLAY_SIZE < 0 || sx >= WINDOW_W)
             continue;
-        if (treeScreenY + TREE_DISPLAY_SIZE < 0 || treeScreenY >= WINDOW_H)
+        if (sy + TREE_DISPLAY_SIZE < 0 || sy >= WINDOW_H)
             continue;
 
-        m_Renderer->DrawSprite(treeTexId,
-                               TREE_FRAME_W, TREE_FRAME_H,
-                               m_TreeAnimFrame, 0,
-                               treeScreenX, treeScreenY,
-                               TREE_DISPLAY_SIZE, TREE_DISPLAY_SIZE);
+        drawList.push_back({ tree.y,
+                             treeTexId,
+                             TREE_FRAME_W, TREE_FRAME_H, m_TreeAnimFrame,
+                             sx, sy,
+                             TREE_DISPLAY_SIZE, TREE_DISPLAY_SIZE,
+                             false });
     }
 
-    // --- Draw player sprite ---
-    int  texId = m_TexDown;
-    bool flipX = false;
-    int  frame = m_AnimFrame;
-    int  fw    = FRAME_W;
-    int  fh    = FRAME_H;
-
-    if (m_IsSlicing)
+    // Add player.
     {
-        frame = m_SliceFrame;
-        fw    = FRAME_W;
-        fh    = FRAME_H;
-        switch (m_Direction)
+        int  texId = m_TexDown;
+        bool flipX = false;
+        int  frame = m_AnimFrame;
+
+        if (m_IsSlicing)
         {
-        case Direction::Up:    texId = m_TexSliceUp;                   break;
-        case Direction::Left:  texId = m_TexSliceSide; flipX = true;   break;
-        case Direction::Right: texId = m_TexSliceSide;                 break;
-        default: /* Down */    texId = m_TexSliceDown;                 break;
+            frame = m_SliceFrame;
+            switch (m_Direction)
+            {
+            case Direction::Up:    texId = m_TexSliceUp;                  break;
+            case Direction::Left:  texId = m_TexSliceSide; flipX = true;  break;
+            case Direction::Right: texId = m_TexSliceSide;                break;
+            default: /* Down */    texId = m_TexSliceDown;                break;
+            }
         }
+        else
+        {
+            switch (m_Direction)
+            {
+            case Direction::Up:    texId = m_TexUp;                 break;
+            case Direction::Left:  texId = m_TexSide; flipX = true; break;
+            case Direction::Right: texId = m_TexSide;               break;
+            default: /* Down */    texId = m_TexDown;               break;
+            }
+        }
+
+        const int drawX = static_cast<int>(m_PosX - m_CamX) - DISPLAY_SIZE / 2;
+        const int drawY = static_cast<int>(m_PosY - m_CamY) - DISPLAY_SIZE / 2;
+
+        drawList.push_back({ m_PosY,
+                             texId,
+                             FRAME_W, FRAME_H, frame,
+                             drawX, drawY,
+                             DISPLAY_SIZE, DISPLAY_SIZE,
+                             flipX });
     }
-    else
+
+    // Sort ascending by base Y — sprites with a lower base are drawn first (behind).
+    std::sort(drawList.begin(), drawList.end(),
+              [](const DrawCall& a, const DrawCall& b) { return a.sortY < b.sortY; });
+
+    for (const auto& dc : drawList)
     {
-        switch (m_Direction)
-        {
-        case Direction::Up:    texId = m_TexUp;                break;
-        case Direction::Left:  texId = m_TexSide; flipX = true; break;
-        case Direction::Right: texId = m_TexSide;              break;
-        default: /* Down */    texId = m_TexDown;              break;
-        }
+        m_Renderer->DrawSprite(dc.texId,
+                               dc.frameW, dc.frameH,
+                               dc.frameCol, 0,
+                               dc.screenX, dc.screenY,
+                               dc.destW, dc.destH,
+                               dc.flipX);
     }
 
-    // Convert world position to screen position.
-    const int drawX = static_cast<int>(m_PosX - m_CamX) - DISPLAY_SIZE / 2;
-    const int drawY = static_cast<int>(m_PosY - m_CamY) - DISPLAY_SIZE / 2;
-
-    m_Renderer->DrawSprite(texId,
-                           fw, fh,
-                           frame, 0,
-                           drawX, drawY,
-                           DISPLAY_SIZE, DISPLAY_SIZE,
-                           flipX);
+    // --- HUD: version string (top-left corner) ---
+    const std::string versionStr = "v" + std::to_string(VERSION_MAJOR) + "."
+                                       + std::to_string(VERSION_MINOR) + "."
+                                       + std::to_string(VERSION_BUILD);
+    m_Renderer->DrawHudText(versionStr, 8, 8, 16);
 
     m_Renderer->Present();
 }
