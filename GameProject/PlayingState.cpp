@@ -1,10 +1,12 @@
 #include "PlayingState.h"
 #include "RaylibRenderer.h"
 #include "GameManager.h"
+#include "Version.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <random>
+#include <string>
 
 PlayingState::PlayingState() = default;
 PlayingState::~PlayingState() = default;
@@ -371,6 +373,12 @@ void PlayingState::Render()
                                dc.destW, dc.destH,
                                dc.flipX);
     }
+
+    // --- HUD: version string (top-left corner) ---
+    const std::string versionStr = "v" + std::to_string(VERSION_MAJOR) + "."
+                                       + std::to_string(VERSION_MINOR) + "."
+                                       + std::to_string(VERSION_BUILD);
+    m_Renderer->DrawHudText(versionStr, 8, 8, 16);
 
     m_Renderer->Present();
 }
